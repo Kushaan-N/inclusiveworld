@@ -13,7 +13,7 @@ export default async function TodoPage() {
   const items = await getTodoItems(user.id);
 
   return (
-    <div className="min-h-screen bg-[#f8f9fb]">
+    <div className="min-h-screen">
       <TopBar
         user={{
           id: user.id,
