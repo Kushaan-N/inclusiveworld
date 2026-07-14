@@ -28,6 +28,7 @@ model User {
   memberships    Membership[]
   createdClasses Classroom[]      @relation("ClassroomCreator")
   progress       LessonProgress[]
+  stepProgress   LessonStepProgress[]
   submissions    Submission[]
   attempts       QuizAttempt[]
   notifications  Notification[]
@@ -73,10 +74,41 @@ model Lesson {
   description String?
   order       Int      @default(0)
   slidesUrl   String? // Google Slides / Drive embed link
+  // Rough "About N minutes" hint shown to students so a lesson never feels
+  // open-ended. Optional — teachers can leave it blank.
+  estimatedMinutes Int?
   createdAt   DateTime @default(now())
 
   classroom Classroom        @relation(fields: [classroomId], references: [id], onDelete: Cascade)
   progress  LessonProgress[]
+  steps     LessonStep[]
+}
+
+// A teacher-authored checklist for a lesson ("Your steps"). Breaking a lesson
+// into small, tickable steps is the core accessibility affordance here: it keeps
+// the next action unambiguous instead of asking a student to hold the whole
+// lesson in their head.
+model LessonStep {
+  id       String @id @default(cuid())
+  lessonId String
+  text     String
+  order    Int    @default(0)
+
+  lesson   Lesson               @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  progress LessonStepProgress[]
+}
+
+model LessonStepProgress {
+  id     String @id @default(cuid())
+  stepId String
+  userId String
+  done   Boolean @default(false)
+  doneAt DateTime?
+
+  step LessonStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([stepId, userId])
 }
 
 model LessonProgress {
