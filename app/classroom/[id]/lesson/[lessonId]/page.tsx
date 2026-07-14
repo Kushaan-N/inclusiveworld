@@ -15,7 +15,13 @@ export default async function LessonViewerPage({
   const lessons = await prisma.lesson.findMany({
     where: { classroomId: id },
     orderBy: { order: "asc" },
-    include: { progress: { where: { userId: user.id } } },
+    include: {
+      progress: { where: { userId: user.id } },
+      steps: {
+        orderBy: { order: "asc" },
+        include: { progress: { where: { userId: user.id } } },
+      },
+    },
   });
 
   const index = lessons.findIndex((l) => l.id === lessonId);
@@ -54,6 +60,12 @@ export default async function LessonViewerPage({
         description: lesson.description,
         embedUrl: toEmbedUrl(lesson.slidesUrl),
         completed: lesson.progress[0]?.completed ?? false,
+        estimatedMinutes: lesson.estimatedMinutes,
+        steps: lesson.steps.map((s) => ({
+          id: s.id,
+          text: s.text,
+          done: s.progress[0]?.done ?? false,
+        })),
       }}
       lessonList={lessons.map((l, i) => ({
         id: l.id,
