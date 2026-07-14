@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getClassroomContext } from "@/lib/queries";
 import { toEmbedUrl } from "@/lib/embed";
+import { normalizeTheme } from "@/lib/themes";
 import { LessonViewer } from "./lesson-viewer";
 
 export default async function LessonViewerPage({
@@ -52,7 +53,13 @@ export default async function LessonViewerPage({
         emoji: classroom.emoji,
         color: classroom.color,
       }}
-      user={{ id: user.id, name: user.name, role: user.role, avatarUrl: user.avatarUrl }}
+      user={{
+        id: user.id,
+        name: user.name,
+        role: user.role,
+        avatarUrl: user.avatarUrl,
+        theme: normalizeTheme(user.theme),
+      }}
       isTeacher={isTeacher}
       lesson={{
         id: lesson.id,
