@@ -8,10 +8,11 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { requireUser } from "@/lib/auth-helpers";
-import { getUserClassrooms, getTodoCount } from "@/lib/queries";
+import { getUserClassrooms, getTodoCount, getPetState } from "@/lib/queries";
 import { TopBar } from "@/components/layout/top-bar";
 import { Logo } from "@/components/brand/logo";
 import { Card, EmptyState, Badge } from "@/components/ui/primitives";
+import { PetAvatar } from "@/components/pet/pet-avatar";
 import { DashboardActions } from "./dashboard-actions";
 import { isTeacherRole } from "@/lib/constants";
 
@@ -20,6 +21,7 @@ export default async function DashboardPage() {
   const classrooms = await getUserClassrooms(user.id);
   const isTeacher = user.role === "TEACHER";
   const todoCount = isTeacher ? 0 : await getTodoCount(user.id);
+  const pet = isTeacher ? null : await getPetState(user.id);
 
   return (
     <div className="min-h-screen">
@@ -49,29 +51,54 @@ export default async function DashboardPage() {
         </div>
 
         {!isTeacher && classrooms.length > 0 && (
-          <Link href="/todo" className="mt-8 block">
-            <Card className="flex items-center gap-4 p-5 transition-shadow hover:shadow-md">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-                <ListChecks className="h-6 w-6" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h2 className="font-bold text-gray-900">My To-do</h2>
-                <p className="text-sm text-gray-500">
-                  {todoCount === 0
-                    ? "You're all caught up. Nothing to turn in."
-                    : `You have ${todoCount} thing${
-                        todoCount === 1 ? "" : "s"
-                      } to turn in. One at a time.`}
-                </p>
-              </div>
-              {todoCount > 0 && (
-                <span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-brand-600 px-2 text-sm font-bold text-white">
-                  {todoCount}
-                </span>
-              )}
-              <ChevronRight className="h-5 w-5 shrink-0 text-gray-300" />
-            </Card>
-          </Link>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            <Link href="/todo" className="block">
+              <Card className="flex h-full items-center gap-4 p-5 transition-shadow hover:shadow-md">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+                  <ListChecks className="h-6 w-6" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h2 className="font-bold text-gray-900">My To-do</h2>
+                  <p className="text-sm text-gray-500">
+                    {todoCount === 0
+                      ? "You're all caught up. Nothing to turn in."
+                      : `You have ${todoCount} thing${
+                          todoCount === 1 ? "" : "s"
+                        } to turn in. One at a time.`}
+                  </p>
+                </div>
+                {todoCount > 0 && (
+                  <span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-brand-600 px-2 text-sm font-bold text-white">
+                    {todoCount}
+                  </span>
+                )}
+                <ChevronRight className="h-5 w-5 shrink-0 text-gray-300" />
+              </Card>
+            </Link>
+
+            {pet && (
+              <Link href="/pet" className="block">
+                <Card className="flex h-full items-center gap-4 p-5 transition-shadow hover:shadow-md">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-brand-50">
+                    <PetAvatar
+                      species={pet.species}
+                      color={pet.color}
+                      level={pet.progress.stage.level}
+                      size={52}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h2 className="font-bold text-gray-900">My Buddy</h2>
+                    <p className="text-sm text-gray-500">
+                      {pet.name} is a Level {pet.progress.stage.level}{" "}
+                      {pet.progress.stage.name} Buddy.
+                    </p>
+                  </div>
+                  <ChevronRight className="h-5 w-5 shrink-0 text-gray-300" />
+                </Card>
+              </Link>
+            )}
+          </div>
         )}
 
         <div className="mt-8">
