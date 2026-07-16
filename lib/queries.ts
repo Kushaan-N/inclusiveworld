@@ -3,6 +3,15 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth-helpers";
 import { isTeacherRole } from "@/lib/constants";
 import { dueSortKey } from "@/lib/due";
+import {
+  XP,
+  petProgress,
+  normalizeSpecies,
+  normalizeColor,
+  normalizePetName,
+  type PetProgress,
+  type PetSpecies,
+} from "@/lib/pet";
 
 /**
  * Loads a classroom and the current user's ACTIVE membership in it.
@@ -137,4 +146,48 @@ export async function getTodoItems(userId: string): Promise<TodoItem[]> {
 export async function getTodoCount(userId: string): Promise<number> {
   const items = await getTodoItems(userId);
   return items.length;
+}
+
+export type PetState = {
+  species: PetSpecies;
+  name: string;
+  color: string;
+  progress: PetProgress;
+  counts: {
+    steps: number;
+    lessons: number;
+    assignments: number;
+    quizzes: number;
+  };
+};
+
+/**
+ * The student's buddy: cosmetic choices from their profile + an XP total
+ * derived live from everything they've actually completed.
+ */
+export async function getPetState(userId: string): Promise<PetState> {
+  const [user, steps, lessons, assignments, quizzes] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { petSpecies: true, petName: true, petColor: true },
+    }),
+    prisma.lessonStepProgress.count({ where: { userId, done: true } }),
+    prisma.lessonProgress.count({ where: { userId, completed: true } }),
+    prisma.submission.count({ where: { userId } }),
+    prisma.quizAttempt.count({ where: { userId } }),
+  ]);
+
+  const xp =
+    steps * XP.step +
+    lessons * XP.lesson +
+    assignments * XP.assignment +
+    quizzes * XP.quiz;
+
+  return {
+    species: normalizeSpecies(user?.petSpecies),
+    name: normalizePetName(user?.petName),
+    color: normalizeColor(user?.petColor),
+    progress: petProgress(xp),
+    counts: { steps, lessons, assignments, quizzes },
+  };
 }
