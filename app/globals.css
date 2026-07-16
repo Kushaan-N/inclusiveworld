@@ -91,6 +91,88 @@ body {
   --app-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cg fill='none' stroke='%23bfe0ec' stroke-width='3'%3E%3Cpath d='M0 34 q20 -12 40 0 t40 0 t40 0 t40 0'/%3E%3Cpath d='M0 122 q20 -12 40 0 t40 0 t40 0 t40 0'/%3E%3C/g%3E%3Cg fill='%23c9e6f0'%3E%3Cpath d='M52 76 c10 -9 26 -9 36 0 c-10 9 -26 9 -36 0 z'/%3E%3Cpath d='M88 76 l11 -7 v14 z'/%3E%3Ccircle cx='60' cy='73' r='2' fill='%23e9f6fa'/%3E%3C/g%3E%3Cg fill='%23d3ecf4'%3E%3Ccircle cx='122' cy='58' r='5'/%3E%3Ccircle cx='136' cy='44' r='3'/%3E%3Ccircle cx='24' cy='100' r='4'/%3E%3Ccircle cx='14' cy='88' r='2.5'/%3E%3C/g%3E%3C/svg%3E");
 }
 
+/*
+  ── Reading & display preferences ────────────────────────────────────────────
+  These scale TEXT only. Tailwind v4 emits font sizes as var(--text-*), and
+  spacing/layout use a separate var(--spacing) scale — so overriding the text
+  tokens here bumps every piece of text proportionally WITHOUT resizing padding,
+  sidebars, or card widths. Layout stays intact; only leg­ibility changes.
+*/
+html[data-text-scale="large"] {
+  --text-xs: 0.82rem;
+  --text-sm: 0.96rem;
+  --text-base: 1.1rem;
+  --text-lg: 1.24rem;
+  --text-xl: 1.38rem;
+  --text-2xl: 1.65rem;
+  --text-3xl: 2.06rem;
+  --text-4xl: 2.48rem;
+}
+html[data-text-scale="xlarge"] {
+  --text-xs: 0.9rem;
+  --text-sm: 1.06rem;
+  --text-base: 1.22rem;
+  --text-lg: 1.37rem;
+  --text-xl: 1.52rem;
+  --text-2xl: 1.83rem;
+  --text-3xl: 2.29rem;
+  --text-4xl: 2.75rem;
+}
+
+/* Relaxed line spacing — applied to reading text (paragraphs & list items)
+   only, so single-line UI controls keep their tight, predictable sizing. */
+html[data-line-spacing="relaxed"] p,
+html[data-line-spacing="relaxed"] li {
+  line-height: 1.9;
+}
+
+/* Easy-read font: swap the sans stack to Atkinson Hyperlegible, a typeface
+   designed for maximum character distinction. We override --font-sans (for any
+   `font-sans` utility) AND set body's font-family directly, since body carries
+   its own font-family declaration that inheritance alone wouldn't beat. */
+html[data-reading-font="easy"] {
+  --font-sans: var(--font-atkinson), ui-sans-serif, system-ui, sans-serif;
+}
+html[data-reading-font="easy"] body {
+  font-family: var(--font-atkinson), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Floating "+points" reward when a step is completed. */
+@keyframes xp-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.9);
+  }
+  25% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px) scale(1);
+  }
+}
+.animate-xp-pop {
+  animation: xp-pop 0.9s ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-xp-pop {
+    animation-duration: 0.9s;
+    animation-name: xp-pop-fade;
+  }
+  @keyframes xp-pop-fade {
+    0%,
+    100% {
+      opacity: 0;
+    }
+    30%,
+    70% {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
 /* Thin, subtle scrollbars for panels */
 .scrollbar-thin::-webkit-scrollbar {
   width: 6px;
