@@ -22,6 +22,7 @@ import {
   EmptyState,
 } from "@/components/ui/primitives";
 import { FileUpload } from "@/components/ui/file-upload";
+import { ReadAloud } from "@/components/ui/read-aloud";
 import { cn, formatDate } from "@/lib/utils";
 import {
   createAssignment,
@@ -167,6 +168,15 @@ function AssignmentCard({
             >
               <ExternalLink className="h-4 w-4" /> Attachment
             </a>
+          )}
+
+          {!isTeacher && (
+            <div className="mt-2">
+              <ReadAloud
+                text={`${assignment.title}. ${assignment.description ?? ""}`}
+                label="Read to me"
+              />
+            </div>
           )}
 
           {/* Student status */}
