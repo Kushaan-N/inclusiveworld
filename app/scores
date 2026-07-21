@@ -1,1 +1,17 @@
+export function ScoreboardWidget({ scores }: { scores: ScoresData }) {
+  if (scores.overallAverage == null) return null; // nothing graded yet, so don't take up space
 
+  const overall = gradeReward(scores.overallAverage);
+  const recent = scores.classes
+    .flatMap((c) => c.items)
+    .sort((a, b) => new Date(b.gradedAt).getTime() - new Date(a.gradedAt).getTime())
+    .slice(0, 4);
+
+  return (
+    <Link href="/scores" className="block">
+      <Card className="h-full p-5 transition-shadow hover:shadow-md">
+        {/* overall grade symbol + letter + % up top, recent grade badges below */}
+      </Card>
+    </Link>
+  );
+}
