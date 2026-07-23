@@ -21,6 +21,7 @@ import { Card, EmptyState, Badge } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
 import { DashboardActions } from "./dashboard-actions";
 import { ScoreboardWidget } from "./scoreboard-widget";
+import { DailySurprise } from "./daily-surprise";
 import { isTeacherRole } from "@/lib/constants";
 
 const DASHBOARD_TODO_LIMIT = 4;
@@ -45,6 +46,12 @@ export default async function DashboardPage() {
       />
 
       <div className="mx-auto max-w-6xl px-6 py-10">
+        {!isTeacher && (
+          <DailySurprise
+            loginKey={user.lastLogin?.toISOString() ?? user.id}
+          />
+        )}
+
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
