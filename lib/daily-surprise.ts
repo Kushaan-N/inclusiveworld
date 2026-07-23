@@ -345,6 +345,19 @@ export function getSurpriseById(id: string): Surprise | undefined {
   return SURPRISES.find((s) => s.id === id);
 }
 
+/**
+ * A random surprise, different from `excludeId` when given. Used by the "Surprise
+ * me!" button so a student can flip to another one on demand without repeating
+ * the one they're already looking at.
+ */
+export function randomSurprise(excludeId?: string | null): Surprise {
+  const pool = excludeId
+    ? SURPRISES.filter((s) => s.id !== excludeId)
+    : SURPRISES;
+  const list = pool.length > 0 ? pool : SURPRISES;
+  return list[Math.floor(Math.random() * list.length)];
+}
+
 export function revealLabelFor(surprise: Surprise): string {
   return surprise.revealLabel ?? DEFAULT_REVEAL_LABEL[surprise.category];
 }

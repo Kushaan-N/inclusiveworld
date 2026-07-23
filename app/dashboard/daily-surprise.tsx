@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sparkles, X } from "lucide-react";
+import { Shuffle, Sparkles, X } from "lucide-react";
 import { ReadAloud } from "@/components/ui/read-aloud";
 import { cn } from "@/lib/utils";
 import {
   CATEGORY_META,
   getSurpriseById,
+  randomSurprise,
   revealLabelFor,
   surpriseForLogin,
   type Surprise,
@@ -92,6 +93,21 @@ export function DailySurprise({ loginKey }: { loginKey: string }) {
     }
   }
 
+  function showAnother() {
+    const next = randomSurprise(surprise?.id);
+    setSurprise(next);
+    setRevealed(false);
+    try {
+      // Persist so the new pick sticks if they navigate around this session.
+      window.localStorage.setItem(
+        CURRENT_KEY,
+        JSON.stringify({ loginKey, id: next.id })
+      );
+    } catch {
+      // Non-fatal: it'll just fall back to the seeded pick on reload.
+    }
+  }
+
   return (
     <div
       className={cn(
@@ -101,16 +117,7 @@ export function DailySurprise({ loginKey }: { loginKey: string }) {
       role="region"
       aria-label="Daily surprise"
     >
-      <button
-        type="button"
-        onClick={dismiss}
-        aria-label="Hide today's surprise"
-        className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-white/60 hover:text-gray-600"
-      >
-        <X className="h-4 w-4" />
-      </button>
-
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-3 sm:gap-4">
         <div
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/70 text-2xl shadow-sm"
           aria-hidden
@@ -118,7 +125,7 @@ export function DailySurprise({ loginKey }: { loginKey: string }) {
           {meta.emoji}
         </div>
 
-        <div className="min-w-0 flex-1 pr-6">
+        <div className="min-w-0 flex-1">
           <div className="mb-1.5 flex flex-wrap items-center gap-2">
             <span
               className={cn(
@@ -159,6 +166,27 @@ export function DailySurprise({ loginKey }: { loginKey: string }) {
           <div className="mt-4">
             <ReadAloud text={spoken} label="Read to me" />
           </div>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            onClick={showAnother}
+            aria-label="Show me another surprise"
+            className="inline-flex items-center gap-1 rounded-full border border-white/80 bg-white/60 px-2.5 py-1 text-xs font-bold text-gray-600 transition-colors hover:bg-white hover:text-gray-800"
+          >
+            <Shuffle className="h-3 w-3" aria-hidden />
+            <span className="hidden sm:inline">Surprise me!</span>
+            <span className="sm:hidden">New</span>
+          </button>
+          <button
+            type="button"
+            onClick={dismiss}
+            aria-label="Hide today's surprise"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-white/60 hover:text-gray-600"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
       </div>
     </div>
