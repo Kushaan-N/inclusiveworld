@@ -9,6 +9,7 @@ import {
   ListChecks,
   Sparkles,
   GraduationCap,
+  NotebookPen,
   User as UserIcon,
   ChevronLeft,
 } from "lucide-react";
@@ -34,6 +35,10 @@ export function AppSidebar({
     { label: "Lessons", href: `${base}/lessons`, icon: BookOpen },
     { label: "Assignments", href: `${base}/assignments`, icon: FileText },
     { label: "Quizzes", href: `${base}/quizzes`, icon: ClipboardCheck },
+    // Teachers get a class gradebook; students get their own /scores view instead.
+    ...(isTeacher
+      ? [{ label: "Grades", href: `${base}/grades`, icon: NotebookPen }]
+      : []),
     // Students get a cross-class "what do I still owe?" view; teachers don't.
     ...(!isTeacher
       ? [

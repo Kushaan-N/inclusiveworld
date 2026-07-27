@@ -371,6 +371,135 @@ function computeTrophies(itemsNewestFirst: ScoreItem[], classes: ClassScores[]):
   return trophies;
 }
 
+// ---- Teacher gradebook -------------------------------------------------
+// A per-class grid of every student's score on every assignment & quiz, with
+// a cumulative average per student — the teacher-facing counterpart to a
+// student's personal /scores page (which teachers can't see). Scores are
+// normalized to 0-100 the same way getScoresData does it, so assignments
+// (out of `points`) and quizzes (already %) compare fairly.
+
+export type GradebookCell = {
+  score: number | null; // normalized 0-100, or null if not submitted/attempted
+  display: string | null; // "92/100" or "85%"
+};
+
+export type GradebookColumn = {
+  id: string; // "a:<assignmentId>" | "q:<quizId>"
+  kind: "assignment" | "quiz";
+  title: string;
+  points: number | null; // assignments have points; quizzes are already a %
+  classAverage: number | null; // average of graded cells in this column
+};
+
+export type GradebookStudent = {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  cells: Record<string, GradebookCell>; // keyed by column id
+  average: number | null; // cumulative across graded columns
+  gradedCount: number;
+};
+
+export type Gradebook = {
+  columns: GradebookColumn[];
+  students: GradebookStudent[];
+  classAverage: number | null; // average of student averages (each student weighted equally)
+  studentCount: number;
+};
+
+const avgOrNull = (scores: number[]): number | null =>
+  scores.length ? average(scores) : null;
+
+export async function getClassGradebook(classroomId: string): Promise<Gradebook> {
+  const [memberships, assignments, quizzes] = await Promise.all([
+    prisma.membership.findMany({
+      where: { classroomId, roleInClass: "STUDENT", status: "ACTIVE", userId: { not: null } },
+      include: { user: { select: { id: true, name: true, avatarUrl: true } } },
+    }),
+    prisma.assignment.findMany({
+      where: { classroomId },
+      orderBy: { createdAt: "asc" },
+      include: { submissions: { select: { userId: true, grade: true } } },
+    }),
+    prisma.quiz.findMany({
+      where: { classroomId },
+      orderBy: { createdAt: "asc" },
+      include: { attempts: { select: { userId: true, score: true } } },
+    }),
+  ]);
+
+  // columnId -> (userId -> cell)
+  const cellsByColumn = new Map<string, Map<string, GradebookCell>>();
+  const columns: GradebookColumn[] = [];
+
+  for (const a of assignments) {
+    const byUser = new Map<string, GradebookCell>();
+    for (const s of a.submissions) {
+      if (s.grade == null) continue;
+      byUser.set(s.userId, {
+        score: Math.round((s.grade / a.points) * 100),
+        display: `${s.grade}/${a.points}`,
+      });
+    }
+    cellsByColumn.set(`a:${a.id}`, byUser);
+    columns.push({
+      id: `a:${a.id}`,
+      kind: "assignment",
+      title: a.title,
+      points: a.points,
+      classAverage: avgOrNull([...byUser.values()].map((c) => c.score!)),
+    });
+  }
+
+  for (const q of quizzes) {
+    const byUser = new Map<string, GradebookCell>();
+    for (const at of q.attempts) {
+      byUser.set(at.userId, { score: at.score, display: `${at.score}%` });
+    }
+    cellsByColumn.set(`q:${q.id}`, byUser);
+    columns.push({
+      id: `q:${q.id}`,
+      kind: "quiz",
+      title: q.title,
+      points: null,
+      classAverage: avgOrNull([...byUser.values()].map((c) => c.score!)),
+    });
+  }
+
+  const students: GradebookStudent[] = memberships
+    .filter((m) => m.user)
+    .map((m) => {
+      const uid = m.user!.id;
+      const cells: Record<string, GradebookCell> = {};
+      const scores: number[] = [];
+      for (const col of columns) {
+        const cell = cellsByColumn.get(col.id)?.get(uid) ?? { score: null, display: null };
+        cells[col.id] = cell;
+        if (cell.score != null) scores.push(cell.score);
+      }
+      return {
+        id: uid,
+        name: m.user!.name,
+        avatarUrl: m.user!.avatarUrl,
+        cells,
+        average: avgOrNull(scores),
+        gradedCount: scores.length,
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const studentAverages = students
+    .map((s) => s.average)
+    .filter((n): n is number => n != null);
+
+  return {
+    columns,
+    students,
+    classAverage: avgOrNull(studentAverages),
+    studentCount: students.length,
+  };
+}
+
 export async function getPetState(userId: string): Promise<PetState> {
   const [user, steps, lessons, assignments, quizzes, scores] = await Promise.all([
     prisma.user.findUnique({
