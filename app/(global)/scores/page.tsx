@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation";
 import { GraduationCap, FileText, ClipboardCheck } from "lucide-react";
 import { requireUser } from "@/lib/auth-helpers";
-import { getScoresData, type ScoreItem, type ClassScores } from "@/lib/queries";
+import { getScoresData, getPetState, type ScoreItem, type ClassScores } from "@/lib/queries";
 import { gradeReward, letterGradeDisplay, GRADE_LEGEND } from "@/lib/grades";
 import { Card, Badge, EmptyState } from "@/components/ui/primitives";
 import { ReadAloud } from "@/components/ui/read-aloud";
 import { TrendPill } from "@/components/scores/trend-pill";
 import { TrophyShelf } from "@/components/scores/trophy-shelf";
+import { BuddyScoresNote } from "@/components/pet/buddy-scores-note";
 import { formatDate } from "@/lib/utils";
 
 export default async function ScoresPage() {
@@ -15,7 +16,10 @@ export default async function ScoresPage() {
   // classroom's Assignments/Quizzes tabs instead (see GradeRow there).
   if (user.role === "TEACHER") redirect("/dashboard");
 
-  const scores = await getScoresData(user.id);
+  const [scores, pet] = await Promise.all([
+    getScoresData(user.id),
+    getPetState(user.id),
+  ]);
   const overall = scores.overallAverage != null ? gradeReward(scores.overallAverage) : null;
 
   return (
@@ -82,6 +86,8 @@ export default async function ScoresPage() {
                 </div>
               )}
             </Card>
+
+            <BuddyScoresNote pet={pet} />
 
             <div className="mt-8 space-y-8">
               {scores.classes.map((c) => {

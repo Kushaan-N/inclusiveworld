@@ -10,6 +10,7 @@ import {
   Check,
   ClipboardCheck,
   ArrowRight,
+  ChevronRight,
 } from "lucide-react";
 import { PetAvatar } from "@/components/pet/pet-avatar";
 import { Card, Input } from "@/components/ui/primitives";
@@ -21,6 +22,7 @@ import {
   XP,
   type PetSpecies,
 } from "@/lib/pet";
+import { gradeReward, letterGradeDisplay } from "@/lib/grades";
 import type { PetState, PracticeSuggestion } from "@/lib/queries";
 import { updatePet } from "@/lib/actions/preferences";
 
@@ -31,8 +33,10 @@ export function PetView({ pet }: { pet: PetState }) {
   const [savedName, setSavedName] = useState(pet.name);
   const [, startTransition] = useTransition();
 
-  const { progress, counts, encouragement } = pet;
+  const { progress, counts, encouragement, scores } = pet;
   const { stage, isMaxed, toNext, xp, nextStageXp } = progress;
+  const standing =
+    scores.overallAverage != null ? gradeReward(scores.overallAverage) : null;
 
   function save(next: Partial<{ species: PetSpecies; color: string; name: string }>) {
     startTransition(async () => {
@@ -64,9 +68,37 @@ export function PetView({ pet }: { pet: PetState }) {
         <p className="mt-1 text-gray-500">
           {encouragement
             ? `${savedName} noticed a dip in ${encouragement.className} — here's how they're cheering you on.`
-            : `${savedName} grows every time you finish something. Keep going!`}
+            : `${savedName} grows from your work and keeps an eye on your scores. Keep going!`}
         </p>
       </div>
+
+      {/* Always-on link to /scores, so the buddy↔grades connection is visible
+          even when nothing's dipped (the encouragement card below only shows
+          on a dip). */}
+      {standing && (
+        <Link href="/scores" className="block">
+          <Card className="flex items-center gap-4 p-4 transition-shadow hover:shadow-md">
+            <span className="text-3xl shrink-0" aria-hidden>
+              {standing.symbol}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-bold text-gray-900">How you&apos;re doing</p>
+              <p className="text-sm text-gray-600">
+                Your average is{" "}
+                <span className="font-semibold text-brand-600">
+                  {scores.overallAverage}% ({letterGradeDisplay(scores.overallAverage!)})
+                </span>{" "}
+                across all classes. {savedName} is cheering you on!
+              </p>
+            </div>
+            <span className="hidden shrink-0 items-center gap-1 text-sm font-semibold text-brand-600 sm:flex">
+              See My Scores
+              <ChevronRight className="h-4 w-4" />
+            </span>
+            <ChevronRight className="h-5 w-5 shrink-0 text-gray-300 sm:hidden" />
+          </Card>
+        </Link>
+      )}
 
       {/* Buddy + progress */}
       <Card className="overflow-hidden">

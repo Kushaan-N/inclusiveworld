@@ -181,6 +181,11 @@ export type PetState = {
     quizzes: number;
   };
   encouragement: PetEncouragement | null;
+  // The buddy's read on how the student is doing — the same cumulative score
+  // shown on /scores. Lets the pet and scores pages cross-reference each
+  // other so the "your buddy reacts to your grades" link is always visible,
+  // not only when a grade dips (see encouragement above).
+  scores: { overallAverage: number | null; gradedCount: number };
 };
 
 /**
@@ -526,6 +531,7 @@ export async function getPetState(userId: string): Promise<PetState> {
     progress: petProgress(xp),
     counts: { steps, lessons, assignments, quizzes },
     encouragement: await getPetEncouragement(userId, scores),
+    scores: { overallAverage: scores.overallAverage, gradedCount: scores.gradedCount },
   };
 }
 
